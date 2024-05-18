@@ -6,7 +6,38 @@ from time import sleep
 import shutil
 import sys
 import traceback # For catch-all error handling - pv
+from time import perf_counter as timer # - pv
 
+units_of_time = (
+	( 'weeks',          86400 * 7   ),
+	( 'days',           86400       ),
+	( 'hours',          3600        ),
+	( 'minutes',        60          ),
+	( 'seconds',        1           ),
+	( 'milliseconds',   0.001       )
+)
+
+def DisplayTime( seconds, granularity=2 ):
+	""" [Taken from pv_utils]
+Converts the given time from seconds into a readable time format (useful when displaying time elapsed from engine.timer())
+
+E.g.:
+- 180 (w/ a granularity of 2) would return "3 minutes"
+- 192 (w/ a granularity of 2) would return "3 minutes, 12 seconds"
+- 3604 (w/ a granularity of 2) would return "1 hour, 4 seconds"
+- 4825 (w/ a granularity of 2) would return "1 hour, 20 minutes"
+- 4825 (w/ a granularity of 3) would return "1 hour, 20 minutes, 25 seconds"
+	"""
+	result = []
+
+	for name, count in units_of_time:
+		value = seconds // count
+		if value:
+			seconds -= value * count
+			if value == 1:
+				name = name.rstrip('s')
+			result.append("{} {}".format(int(value), name))
+	return ', '.join(result[:granularity])
 
 global dupe_fixer_flags
 global already_backed_up
@@ -153,7 +184,8 @@ def is_stock_gdt(name, stock_gdt_names):
 
 
 def __main__():
-    
+
+    start_time = timer()
     dupe_error_path = Path('./dupe_error.txt').resolve()
 
     try:
@@ -170,6 +202,8 @@ def __main__():
         print(f"{dupe_error_path} wasn't found.\nIt has now been created for you.")
         print(f"Place your linker error lines in {dupe_error_path}, save, and run this tool again.")
 
+    elapsed = timer() - start_time
+    print( "Execution completed in", display_time( elapsed ) )
 
     input("Press [RETURN] to exit ;")
 
@@ -215,8 +249,8 @@ if __name__ == "__main__":
             "UNHANDLED EXCEPTION: An error has occured.",
             '\033[1m' + _e + '\033[0m',
             "There's a traceback in your log file",
-			"\nPlease dm your LOG FILE & your DUPE ERROR FILE to either Shidouri or prov3ntus on discord so we can help you fix the error, and ensure others don't run into the same issue",
-			f'Your log file can be located here: {os.path.join( os.getcwd(), "gdt_dupe_purger_error.log" )}',
+	    "\nPlease dm your LOG FILE & your DUPE ERROR FILE to either Shidouri or prov3ntus on discord so we can help you fix the error, and ensure others don't run into the same issue",
+	    f'Your log file can be located here: {os.path.join( os.getcwd(), "gdt_dupe_purger_error.log" )}',
             f'Your dupe_error file can be located here: {os.path.join( os.getcwd(), "dupe_error.txt" )}',
             "\nAlternatively, you can open an issue on GitHub",
             sep = '\n', end = '\033[0m' + '\n
