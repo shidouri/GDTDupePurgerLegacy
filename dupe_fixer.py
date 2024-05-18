@@ -5,6 +5,7 @@ import json
 from time import sleep
 import shutil
 import sys
+import traceback # For catch-all error handling - pv
 
 
 global dupe_fixer_flags
@@ -101,7 +102,23 @@ def split_error_line_to_object(error_log):
         lines = f.readlines()
         
     for line in lines:
-        if 'ERROR: Duplicate' not in line and 'found in ' not in line and 'gdt:' not in line:
+        """
+        TL;DR:
+        If you use 'and' comparisons here, if one of these three ('ERROR: Duplicate', 'found in ', 'gdt:') are present in the line, but the other isn't, like 
+        in the example provided below, you'll get an error when parsing the line, and the program will crash.
+        
+        Changed 'and' to 'or' comparisons because sometimes the launcher starts a new line for some reason, resulting in a line that's split up like so:
+        
+        > ERROR: Duplicate 'aifxtable' asset 'c_zmb_apothicon_fury_fx_table' foun
+        > d in m:\black ops iii\steamapps\common\call of duty black ops iii\source_data\c_zom_dlc4_apothicon_fury.gdt:3864
+
+        This will cause an error because this line will start to get processed because the program saw 'ERROR: Duplicate' but not 'found in ' or 'gdt:' and 
+        so this line and the next should be skipped from parsing
+        
+        \- pv
+         """
+        #if 'ERROR: Duplicate' not in line or 'found in ' not in line or 'gdt:' not in line:
+        if any( kwd not in line for kwd in ( 'ERROR: Duplicate', 'found in ', 'gdt:' ) ) # Iteration ftw g
             continue
             
         asset = line.split("asset")[1].split(" found in")[0].replace("'", "").replace(" ", "")
@@ -185,4 +202,25 @@ if __name__ == "__main__":
         print(f"BACKUP GDTS: {dupe_fixer_flags.should_bak}")	
     
     stock_gdts = get_stock_gdts()
-    __main__()
+    
+    # Adding a catch-all error output here so people can send us a log file with the error they get (with a traceback) when the program crashes
+    try: __main__()
+    except Exception as _e:
+
+        with open( "gdt_dupe_purger_error.log", 'w' ) as log:
+            log.write( traceback.format_exc() )
+        
+        print(
+            '\033[91m',
+            "UNHANDLED EXCEPTION: An error has occured.",
+            '\033[1m' + _e + '\033[0m',
+            "There's a traceback in your log file",
+			"\nPlease dm your LOG FILE & your DUPE ERROR FILE to either Shidouri or prov3ntus on discord so we can help you fix the error, and ensure others don't run into the same issue",
+			f'Your log file can be located here: {os.path.join( os.getcwd(), "gdt_dupe_purger_error.log" )}',
+            f'Your dupe_error file can be located here: {os.path.join( os.getcwd(), "dupe_error.txt" )}',
+            "\nAlternatively, you can open an issue on GitHub",
+            sep = '\n', end = '\033[0m' + '\n
+        )
+
+        input( "Press [RETURN] to exit ;" )
+    
