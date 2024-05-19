@@ -1,6 +1,10 @@
 # GDTDupePurger
 A one-file script that takes duplicate asset errors from Black Ops 3 Mod Tools' linker output and attempt to resolve them.
 
+# This version of GDTDupePurger is legacy and will no longer be updated. Instead, you should use GDTDupePurgerPy found here: 
+## https://github.com/shidouri/GDTDupePurgerPy
+
+
 How to use:
 
 Do "Compile" in BO3 MT. If you have duplicates, they will show in the linker output, such as:
